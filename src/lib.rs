@@ -44,6 +44,8 @@ const SPS: u32 = 48_000; // Sample Hz
 const MAX_FREQ: SampleType = 10_000.0; // Stupidly high note
 const MIN_PERIOD: SampleType = (SPS as SampleType) / MAX_FREQ; // Minumum Period Samples
 
+const MAX_SAMPLE_SIZE: usize = 4096;
+
 const NBITS: usize = ::std::mem::size_of::<usize>() * 8;
 
 struct ZeroCross(bool, SampleType);
@@ -53,7 +55,7 @@ impl ZeroCross {
 		ZeroCross(false, 0.0)
 	}
 
-	fn get(&mut self, s: SampleType, t: SampleType) -> bool {
+	fn get(&mut self, s: SampleType, _t: SampleType) -> bool {
         if s > self.1 {
             self.0 = true;
         } else {
@@ -73,15 +75,18 @@ impl ZeroCross {
 }
 
 struct BitStream {
-	bits: Vec<usize>,
+	bits: [usize; MAX_SAMPLE_SIZE],
 	len: usize,
 }
 
 impl BitStream {
 	fn new(samples: &[SampleType], threshold: SampleType) -> Self {
+		if samples.len() > MAX_SAMPLE_SIZE {
+			panic!("can't analyze sample of length greater than {}", MAX_SAMPLE_SIZE);
+		}
 		let mut zc = ZeroCross::new();
 		let mut bin = BitStream {
-			bits: Vec::with_capacity(samples.len() / NBITS),
+			bits: [0; MAX_SAMPLE_SIZE],
 			len: samples.len(),
 		};
 
@@ -96,11 +101,11 @@ impl BitStream {
 				}
 				i += 1;
 				if i == samples.len() {
-					bin.bits.push(register);
+					bin.bits[i] = register;
 					break 'a;
 				}
 			}
-			bin.bits.push(register);
+			bin.bits[i] = register;
 		}
 
 		bin
