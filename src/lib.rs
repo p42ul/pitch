@@ -37,7 +37,7 @@
 //! SQUARE_A4: 434.3891 Hz, 0.80022585 Vl
 //! ```
 
-type SampleType = f64;
+type SampleType = f32;
 
 // BCF constants:
 const SPS: u32 = 48_000; // Sample Hz
@@ -158,6 +158,7 @@ fn bcf(samples: &[SampleType]) -> Option<(SampleType, SampleType)> {
 
 	// Convert Into a Bitstream of Zero-Crossings
 	let bin = BitStream::new(samples, volume * 0.00001);
+	println!("samples length: {}, bitstream length: {}", samples.len(), bin.len);
 
 	// Binary Autocorrelation
 	let est_index = bin.autocorrelate();
